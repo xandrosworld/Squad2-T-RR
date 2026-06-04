@@ -34,8 +34,11 @@ function showToastNotification(message, type) {
     setTimeout(function() { if (toast.parentNode) toast.remove(); }, 3000);
 }
 
-window.TabPheDuyetTinDung = function () {
+window.TabPheDuyetTinDung = function (props) {
     const e = React.createElement;
+    props = props || {};
+    const userRole = props.userRole || 'tdrr';
+    const canAccessTongHopYKien = userRole === 'tkhd';
     const [activeTab, setActiveTab] = React.useState('tongQuan');
     const [approvalNote, setApprovalNote] = React.useState('');
     const [showCollateralList, setShowCollateralList] = React.useState(false);
@@ -71,7 +74,15 @@ window.TabPheDuyetTinDung = function () {
         { id: 'thongTinDXTD', label: 'Thông tin Đề xuất và Thẩm định' },
         { id: 'quyetDinhPD', label: 'Quyết định tín dụng' },
         { id: 'tongHopYKien', label: 'Tổng hợp ý kiến' }
-    ];
+    ].filter(function(tab) {
+        return tab.id !== 'tongHopYKien' || canAccessTongHopYKien;
+    });
+
+    React.useEffect(function() {
+        if (!canAccessTongHopYKien && mainSegment === 'tongHopYKien') {
+            setMainSegment('thongTinDXTD');
+        }
+    }, [canAccessTongHopYKien, mainSegment]);
 
     const unresolvedDiffCount = 6 - Object.keys(diffDecisions).filter(function(key) { return !!diffDecisions[key]; }).length;
     const unresolvedCollateralCount = 4 - Object.keys(collateralDecisions).filter(function(key) { return !!collateralDecisions[key]; }).length;

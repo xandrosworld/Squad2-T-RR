@@ -465,13 +465,13 @@ function LeftNavPanel({ activeMainTab, setActiveMainTab, activeSubTab, setActive
 // CONTENT AREA - Load tab từ file riêng
 // =====================================================
 
-function ContentArea({ activeMainTab, activeSubTab }) {
+function ContentArea({ activeMainTab, activeSubTab, userRole }) {
     return e('div', { className: 'flex-1 overflow-y-auto px-3 md:px-5 py-3 md:py-4' },
-        e(TabContent, { activeMainTab, activeSubTab })
+        e(TabContent, { activeMainTab, activeSubTab, userRole })
     );
 }
 
-function TabContent({ activeMainTab, activeSubTab }) {
+function TabContent({ activeMainTab, activeSubTab, userRole }) {
     // Tab Thông tin khách hàng - load component từ SUB_TABS_TTKH
     if (activeMainTab === 'thongTinKH') {
         const subTabConfig = SUB_TABS_TTKH.find(t => t.id === activeSubTab);
@@ -501,7 +501,7 @@ function TabContent({ activeMainTab, activeSubTab }) {
 
     if (activeMainTab === 'pheDuyetTinDung') {
         if (window.TabPheDuyetTinDung) {
-            return e(window.TabPheDuyetTinDung);
+            return e(window.TabPheDuyetTinDung, { userRole: userRole || 'tdrr' });
         }
         return e('div', { className: 'content-card p-6' },
             e('p', { className: 'text-gray-500 text-center py-10' }, 'Loading...')
@@ -816,7 +816,7 @@ function BCDXScreen({ selectedBCDX, onBack, initialMainTab }) {
                 // Left nav panel
                 e(LeftNavPanel, { activeMainTab, setActiveMainTab, activeSubTab, setActiveSubTab }),
                 // Content area (scrollable)
-                e(ContentArea, { activeMainTab, activeSubTab })
+                e(ContentArea, { activeMainTab, activeSubTab, userRole: 'tdrr' })
             )
         ),
 
