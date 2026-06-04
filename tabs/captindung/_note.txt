@@ -1,0 +1,7 @@
+// =====================================================
+// Tab: Phương án cấp tín dụng  
+// File này quá dài (600+ dòng), vui lòng chờ tôi tạo lại với cấu trúc tối ưu hơn
+// =====================================================
+
+// TẠM THỜI: Tôi sẽ tạo file mới ngắn gọn hơn, giữ nguyên logic nhưng refactor code
+// BẠN VUI LÒNG CHỜ...

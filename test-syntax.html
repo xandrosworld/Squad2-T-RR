@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+<div id="result">Checking...</div>
+<script>
+window.onerror = function(msg, url, line, col, err) {
+    document.getElementById('result').innerText = 'ERROR: ' + msg + ' at line ' + line + ', col ' + col;
+};
+</script>
+<script src="https://unpkg.com/react@18/umd/react.development.min.js"></script>
+<script src="tabs/Luongtrinhduyet/luong-trinh-duyet.js"></script>
+<script>
+if (window.TabLuongTrinhDuyet) {
+    document.getElementById('result').innerText = 'TabLuongTrinhDuyet loaded OK! Type: ' + typeof window.TabLuongTrinhDuyet;
+} else {
+    document.getElementById('result').innerText += ' | TabLuongTrinhDuyet is UNDEFINED';
+}
+</script>
+</body>
+</html>
+</CodeContent>
+<parameter name="EmptyFile">false
