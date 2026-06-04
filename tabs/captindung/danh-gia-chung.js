@@ -5,6 +5,43 @@
 window.TabDanhGiaChung = function () {
     const e = React.createElement;
 
+    // Section completion tracking
+    const [sectionDone, setSectionDone] = React.useState({
+        ruiRo: false,
+        tuanThu: false,
+        yKienTDRR: false,
+        qlrrTapTrung: false,
+        gioiHanNganh: false
+    });
+
+    // Auto-check sections completion
+    var checkSectionCompletion = function() {
+        var newDone = {};
+        // Rủi ro: completed if at least 1 risk entry exists
+        newDone.ruiRo = ruiRoList.length > 0;
+        // Tuân thủ: completed if at least 1 regulation entry exists
+        newDone.tuanThu = quyDinhList.length > 0;
+        // Ý kiến TĐRR: completed if đánh giá field has content
+        newDone.yKienTDRR = tdrrDanhGiaDeXuat && tdrrDanhGiaDeXuat !== '';
+        // QLRR tập trung: completed if qlrrData has entries
+        newDone.qlrrTapTrung = qlrrData.length > 0;
+        // Giới hạn ngành: completed if ngành list has entries
+        newDone.gioiHanNganh = gioiHanNganhList.length > 0;
+        setSectionDone(newDone);
+    };
+
+    // Auto-check when data changes
+    React.useEffect(function() {
+        checkSectionCompletion();
+    }, [ruiRoList, quyDinhList, tdrrDanhGiaDeXuat, qlrrData, gioiHanNganhList]);
+
+    // Helper: render section completion badge
+    var renderSectionBadge = function(sectionKey) {
+        return e('span', {
+            className: sectionDone[sectionKey] ? 'ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full' : 'hidden'
+        }, e('i', { className: 'fas fa-check-circle text-[10px]' }), ' Hoàn thành');
+    };
+
     // State cho phần TĐRR
     const [tdrrDanhGiaDeXuat, setTdrrDanhGiaDeXuat] = React.useState('');
     const [tdrrRuiRoOption, setTdrrRuiRoOption] = React.useState('daDayDu'); // 'daDayDu' | 'boSung'
@@ -367,7 +404,8 @@ window.TabDanhGiaChung = function () {
                     e('div', { className: 'flex items-center justify-between mb-3' },
                         e('h4', { className: 'text-base font-bold text-[#006B68] flex items-center gap-2' },
                             e('i', { className: 'fas fa-shield-alt text-sm' }),
-                            'Đánh giá rủi ro và các biện pháp phòng ngừa'
+                            'Đánh giá rủi ro và các biện pháp phòng ngừa',
+                            renderSectionBadge('ruiRo')
                         ),
                         e('button', {
                             className: 'px-3 py-1.5 text-sm text-[#006B68] border border-[#006B68] rounded-lg hover:bg-[#e6f4f1] flex items-center gap-1',
@@ -489,7 +527,8 @@ window.TabDanhGiaChung = function () {
                 e('div', null,
                     e('h4', { className: 'text-base font-bold text-[#006B68] mb-3 flex items-center gap-2' },
                         e('i', { className: 'fas fa-clipboard-check text-sm' }),
-                        'Đánh giá tuân thủ chính sách, quy định'
+                        'Đánh giá tuân thủ chính sách, quy định',
+                        renderSectionBadge('tuanThu')
                     ),
 
                     // Bảng với border
@@ -587,8 +626,11 @@ window.TabDanhGiaChung = function () {
     const renderTDRRSection = () => {
         return e('div', { className: 'bg-white rounded-lg border border-gray-200' },
             // Header
-            e('div', { className: 'px-4 py-3 border-b border-gray-200 bg-gray-50' },
-                e('h3', { className: 'text-sm font-semibold text-gray-800' }, 'Ý kiến thẩm định rủi ro')
+            e('div', { className: 'px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between' },
+                e('div', { className: 'flex items-center gap-2' },
+                    e('h3', { className: 'text-sm font-semibold text-gray-800' }, 'Ý kiến thẩm định rủi ro'),
+                    renderSectionBadge('yKienTDRR')
+                )
             ),
 
             e('div', { className: 'p-4 space-y-4' },
@@ -812,6 +854,49 @@ window.TabDanhGiaChung = function () {
 
         // Khối Ý kiến thẩm định rủi ro
         renderTDRRSection(),
+
+        // ===== VALIDATION PROGRESS SUMMARY =====
+        e('div', { className: 'bg-white border border-gray-200 rounded-lg p-5' },
+            // Progress summary
+            e('div', { className: 'flex items-center justify-between mb-4' },
+                e('div', { className: 'flex items-center gap-3' },
+                    e('h3', { className: 'font-semibold text-gray-800' }, 'Trạng thái hoàn thành'),
+                    e('span', { className: 'text-sm text-gray-500' },
+                        Object.values(sectionDone).filter(function(v) { return v; }).length + '/' + Object.keys(sectionDone).length + ' mục đã hoàn thành'
+                    )
+                ),
+                // Progress bar
+                e('div', { className: 'w-48 h-2 bg-gray-200 rounded-full overflow-hidden' },
+                    e('div', {
+                        className: 'h-full bg-[#006B68] rounded-full transition-all duration-500',
+                        style: { width: (Object.values(sectionDone).filter(function(v) { return v; }).length / Object.keys(sectionDone).length * 100) + '%' }
+                    })
+                )
+            ),
+            // Section detail badges
+            e('div', { className: 'flex flex-wrap gap-2' },
+                e('span', { className: 'inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full ' + (sectionDone.ruiRo ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500') },
+                    e('i', { className: 'fas ' + (sectionDone.ruiRo ? 'fa-check-circle' : 'fa-circle') + ' text-[10px]' }),
+                    'Đánh giá rủi ro'
+                ),
+                e('span', { className: 'inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full ' + (sectionDone.tuanThu ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500') },
+                    e('i', { className: 'fas ' + (sectionDone.tuanThu ? 'fa-check-circle' : 'fa-circle') + ' text-[10px]' }),
+                    'Tuân thủ quy định'
+                ),
+                e('span', { className: 'inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full ' + (sectionDone.yKienTDRR ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500') },
+                    e('i', { className: 'fas ' + (sectionDone.yKienTDRR ? 'fa-check-circle' : 'fa-circle') + ' text-[10px]' }),
+                    'Ý kiến TĐRR'
+                ),
+                e('span', { className: 'inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full ' + (sectionDone.qlrrTapTrung ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500') },
+                    e('i', { className: 'fas ' + (sectionDone.qlrrTapTrung ? 'fa-check-circle' : 'fa-circle') + ' text-[10px]' }),
+                    'QLRR tập trung'
+                ),
+                e('span', { className: 'inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full ' + (sectionDone.gioiHanNganh ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500') },
+                    e('i', { className: 'fas ' + (sectionDone.gioiHanNganh ? 'fa-check-circle' : 'fa-circle') + ' text-[10px]' }),
+                    'Giới hạn ngành'
+                )
+            )
+        ),
 
         // ===== MODAL CHỈNH SỬA RỦI RO =====
         showEditModal && editingRuiRo && e('div', { className: 'fixed inset-0 bg-black/50 flex items-center justify-center z-50' },

@@ -765,6 +765,25 @@
         // Biên bản state
         const [bienBanSaved, setBienBanSaved] = React.useState(false);
 
+        // === TASK 14: New states ===
+        const [isLocked, setIsLocked] = React.useState(false);
+        const [sessionStatus, setSessionStatus] = React.useState('active');
+        const [showTongHopKQPopup, setShowTongHopKQPopup] = React.useState(false);
+        const [showHuyPhienPopup, setShowHuyPhienPopup] = React.useState(false);
+        const [huyPhienReason, setHuyPhienReason] = React.useState('');
+        const [huyPhienError, setHuyPhienError] = React.useState('');
+        const [showLichSuPopup, setShowLichSuPopup] = React.useState(false);
+        const [tongHopTimestamp, setTongHopTimestamp] = React.useState('');
+
+        var mockLichSuData = [
+            { thoiGian: '18/01/2026 09:15', nguoi: 'Phạm Thị Hồng Ngọc', hanhDong: 'Tạo phiếu lấy ý kiến', noiDung: 'Phát hành PLYK-2025-0073 cho 5 thành viên HĐ' },
+            { thoiGian: '18/01/2026 10:30', nguoi: 'Hệ thống', hanhDong: 'Gửi thông báo', noiDung: 'Gửi email thông báo tới 5 thành viên Hội đồng' },
+            { thoiGian: '18/01/2026 14:20', nguoi: 'Nguyễn Thu Hà', hanhDong: 'Phản hồi ý kiến', noiDung: 'Đồng ý cấp tín dụng theo đề xuất' },
+            { thoiGian: '19/01/2026 10:30', nguoi: 'Trần Long', hanhDong: 'Phản hồi ý kiến', noiDung: 'Đồng ý - Lưu ý rủi ro ngành xây dựng' },
+            { thoiGian: '19/01/2026 11:45', nguoi: 'Phạm Hoàng Long', hanhDong: 'Phản hồi ý kiến', noiDung: 'Không đồng ý - Đề nghị xem xét lại phương án tài chính' },
+            { thoiGian: '20/01/2026 09:00', nguoi: 'Phạm Thị Hồng Ngọc', hanhDong: 'Nhắc nhở', noiDung: 'Gửi nhắc nhở tới 2 thành viên chưa phản hồi' }
+        ];
+
         const allCouncilMembers = React.useMemo(() => [
             ...MOCK_THANH_VIEN_HD,
             { id: 'TV06', hoTen: 'Nguyễn Tiến Đức', chucVu: 'Phó Giám đốc', maNV: '100006', email: 'ntduc@bidv.com.vn', donVi: 'Ban Tài trợ dự án' },
@@ -2168,6 +2187,20 @@
                         e('div', { className: 'case-actions' },
                             e('button', {
                                 className: 'case-btn case-btn-outline',
+                                onClick: function() { setShowLichSuPopup(true); }
+                            }, e('i', { className: 'fas fa-clock-rotate-left' }), 'Lịch sử lấy ý kiến'),
+                            sessionStatus !== 'da-huy' && e('button', {
+                                className: 'case-btn case-btn-outline',
+                                style: { borderColor: '#ef4444', color: '#ef4444' },
+                                onClick: function() { setShowHuyPhienPopup(true); setHuyPhienReason(''); setHuyPhienError(''); }
+                            }, e('i', { className: 'fas fa-ban' }), 'Hủy phiên XYK'),
+                            !isLocked && sessionStatus !== 'da-huy' && e('button', {
+                                className: 'case-btn case-btn-primary',
+                                style: { backgroundColor: '#006B68' },
+                                onClick: function() { setShowTongHopKQPopup(true); }
+                            }, e('i', { className: 'fas fa-chart-bar' }), 'Tổng hợp kết quả'),
+                            e('button', {
+                                className: 'case-btn case-btn-outline',
                                 onClick: onBack
                             }, e('i', { className: 'fas fa-arrow-left' }), 'Quay lại'),
                             e('button', {
@@ -2216,11 +2249,153 @@
                     ),
                     // Content
                     e('div', { className: 'flex-1 overflow-y-auto px-3 md:px-5 py-3 md:py-4' },
+                        // === TASK 14: Locked / Cancelled status banner ===
+                        isLocked && e('div', { className: 'flex items-center gap-2 px-3 py-2 mb-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700 font-semibold' },
+                            e('i', { className: 'fas fa-lock' }),
+                            'Đã tổng hợp kết quả lúc ' + tongHopTimestamp + ' — Chế độ chỉ đọc'
+                        ),
+                        sessionStatus === 'da-huy' && e('div', { className: 'flex items-center gap-2 px-3 py-2 mb-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-700 font-semibold' },
+                            e('i', { className: 'fas fa-ban' }),
+                            'Phiên lấy ý kiến đã bị hủy'
+                        ),
+
                         activeScreen === 'tongQuan' && renderTongQuan(),
                         activeScreen === 'taoPYK' && renderTaoPYK(),
                         activeScreen === 'tongHopYK' && renderTongHopYK(),
                         activeScreen === 'bienBan' && renderBienBan(),
                         activeScreen === 'nhacNho' && renderNhacNho()
+                    ),
+
+                    // === TASK 14: Tổng hợp kết quả Popup ===
+                    showTongHopKQPopup && e('div', {
+                        className: 'fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4',
+                        onClick: function(ev) { if (ev.target === ev.currentTarget) setShowTongHopKQPopup(false); }
+                    },
+                        e('div', { className: 'w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden' },
+                            e('div', { className: 'px-5 py-4 border-b border-gray-200 bg-gray-50' },
+                                e('h3', { className: 'text-base font-bold text-[#006B68]' }, 'Xác nhận tổng hợp kết quả')
+                            ),
+                            e('div', { className: 'p-5 space-y-3' },
+                                e('div', { className: 'flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2.5 leading-5' },
+                                    e('i', { className: 'fas fa-triangle-exclamation mt-0.5 flex-shrink-0' }),
+                                    e('span', null, 'Sau khi tổng hợp, toàn bộ phản hồi của TVHD sẽ bị khóa và chuyển sang chế độ chỉ đọc.')
+                                ),
+                                e('p', { className: 'text-sm text-gray-700' }, 'Bạn có chắc chắn muốn tổng hợp kết quả lấy ý kiến không?'),
+                                e('div', { className: 'flex justify-end gap-2 pt-2' },
+                                    e('button', {
+                                        className: 'h-9 px-4 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700',
+                                        onClick: function() { setShowTongHopKQPopup(false); }
+                                    }, 'Hủy'),
+                                    e('button', {
+                                        className: 'h-9 px-5 bg-[#006B68] text-white rounded-lg text-sm font-semibold hover:bg-[#005B58]',
+                                        onClick: function() {
+                                            var now = new Date();
+                                            var ts = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
+                                            setTongHopTimestamp(ts);
+                                            setIsLocked(true);
+                                            setShowTongHopKQPopup(false);
+                                            if (typeof showToastNotification === 'function') {
+                                                showToastNotification('Đã tổng hợp kết quả thành công', 'success');
+                                            }
+                                        }
+                                    }, e('i', { className: 'fas fa-check mr-2 text-xs' }), 'Xác nhận tổng hợp')
+                                )
+                            )
+                        )
+                    ),
+
+                    // === TASK 14: Hủy phiên XYK Popup ===
+                    showHuyPhienPopup && e('div', {
+                        className: 'fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4',
+                        onClick: function(ev) { if (ev.target === ev.currentTarget) setShowHuyPhienPopup(false); }
+                    },
+                        e('div', { className: 'w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden' },
+                            e('div', { className: 'px-5 py-4 border-b border-gray-200 bg-gray-50' },
+                                e('h3', { className: 'text-base font-bold text-red-600' }, 'Hủy phiên lấy ý kiến')
+                            ),
+                            e('div', { className: 'p-5 space-y-3' },
+                                e('div', { className: 'flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 leading-5' },
+                                    e('i', { className: 'fas fa-exclamation-circle mt-0.5 flex-shrink-0' }),
+                                    e('span', null, 'Hành động này sẽ hủy toàn bộ phiên lấy ý kiến và không thể hoàn tác.')
+                                ),
+                                e('div', null,
+                                    e('label', { className: 'block text-sm font-semibold text-gray-700 mb-1.5' },
+                                        'Lý do hủy ', e('span', { className: 'text-red-500' }, '*')
+                                    ),
+                                    e('textarea', {
+                                        className: 'w-full min-h-[80px] border rounded-lg p-3 text-sm outline-none ' +
+                                            (huyPhienError ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-[#006B68] focus:ring-2 focus:ring-[#006B68]/10'),
+                                        placeholder: 'Nhập lý do hủy phiên lấy ý kiến...',
+                                        value: huyPhienReason,
+                                        onChange: function(ev) { setHuyPhienReason(ev.target.value); setHuyPhienError(''); }
+                                    }),
+                                    huyPhienError && e('p', { className: 'text-xs text-red-500 mt-1' }, huyPhienError)
+                                ),
+                                e('div', { className: 'flex justify-end gap-2 pt-2' },
+                                    e('button', {
+                                        className: 'h-9 px-4 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700',
+                                        onClick: function() { setShowHuyPhienPopup(false); }
+                                    }, 'Quay lại'),
+                                    e('button', {
+                                        className: 'h-9 px-5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700',
+                                        onClick: function() {
+                                            if (!huyPhienReason.trim()) {
+                                                setHuyPhienError('Vui lòng nhập lý do hủy phiên lấy ý kiến');
+                                                return;
+                                            }
+                                            setSessionStatus('da-huy');
+                                            setShowHuyPhienPopup(false);
+                                            if (typeof showToastNotification === 'function') {
+                                                showToastNotification('Đã hủy phiên lấy ý kiến', 'warning');
+                                            }
+                                        }
+                                    }, e('i', { className: 'fas fa-ban mr-2 text-xs' }), 'Xác nhận hủy')
+                                )
+                            )
+                        )
+                    ),
+
+                    // === TASK 14: Lịch sử lấy ý kiến Popup ===
+                    showLichSuPopup && e('div', {
+                        className: 'fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4',
+                        onClick: function(ev) { if (ev.target === ev.currentTarget) setShowLichSuPopup(false); }
+                    },
+                        e('div', { className: 'w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden' },
+                            e('div', { className: 'px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50' },
+                                e('h3', { className: 'text-base font-bold text-[#006B68]' }, 'Lịch sử lấy ý kiến'),
+                                e('button', {
+                                    className: 'w-9 h-9 rounded-lg hover:bg-gray-200 text-gray-500',
+                                    onClick: function() { setShowLichSuPopup(false); }
+                                }, e('i', { className: 'fas fa-times' }))
+                            ),
+                            e('div', { className: 'p-5 overflow-x-auto' },
+                                e('table', { className: 'w-full text-sm', style: { minWidth: '600px' } },
+                                    e('thead', null,
+                                        e('tr', { className: 'bg-[#006B68] text-white' },
+                                            ['Thời gian', 'Người thao tác', 'Hành động', 'Nội dung'].map(function(h) {
+                                                return e('th', { key: h, className: 'px-4 py-3 text-left font-semibold' }, h);
+                                            })
+                                        )
+                                    ),
+                                    e('tbody', null,
+                                        mockLichSuData.map(function(row, idx) {
+                                            var actionTone = row.hanhDong === 'Phản hồi ý kiến' ? 'bg-green-100 text-green-700'
+                                                : row.hanhDong === 'Nhắc nhở' ? 'bg-orange-100 text-orange-700'
+                                                : row.hanhDong === 'Gửi thông báo' ? 'bg-blue-100 text-blue-700'
+                                                : 'bg-gray-100 text-gray-700';
+                                            return e('tr', { key: idx, className: 'border-b border-gray-100 last:border-b-0 hover:bg-gray-50' },
+                                                e('td', { className: 'px-4 py-3 text-gray-500 whitespace-nowrap' }, row.thoiGian),
+                                                e('td', { className: 'px-4 py-3 font-semibold text-gray-800' }, row.nguoi),
+                                                e('td', { className: 'px-4 py-3' },
+                                                    e('span', { className: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ' + actionTone }, row.hanhDong)
+                                                ),
+                                                e('td', { className: 'px-4 py-3 text-gray-600' }, row.noiDung)
+                                            );
+                                        })
+                                    )
+                                )
+                            )
+                        )
                     )
                 )
             )

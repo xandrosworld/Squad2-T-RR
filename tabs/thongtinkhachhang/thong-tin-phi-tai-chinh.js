@@ -143,9 +143,98 @@ window.TabThongTinPhiTaiChinh = function () {
     const e = React.createElement;
 
     // Collapsible state for all sections
-    // Handle save
+
+    // Section validation state - tracks which sections are completed
+    const [sectionValidation, setSectionValidation] = React.useState({
+        dkkd: false,
+        quanLy: false,
+        niemYet: false,
+        congTyCon: false,
+        lichSuHD: false,
+        nangLucPL: false,
+        coCauCoDong: false,
+        soDoToChuc: false,
+        quanTriDieuHanh: false,
+        tinhHinhSXKD: false
+    });
+
+    // Validation error highlights
+    const [validationErrors, setValidationErrors] = React.useState({});
+
+    // Handle save with validation
     const handleSave = () => {
-        alert('Đã lưu thông tin thành công!');
+        var errors = {};
+        var newValidation = {};
+
+        // Validate section: Thông tin ĐKKD
+        var dkkdOk = formData.tenCongTy && formData.tenCongTy !== '' && formData.maSoDN && formData.maSoDN !== '';
+        newValidation.dkkd = dkkdOk;
+
+        // Validate section: Thông tin quản lý
+        var quanLyOk = thongTinQuanLy.length > 0;
+        newValidation.quanLy = quanLyOk;
+
+        // Validate section: Thông tin niêm yết
+        var niemYetOk = !formData.daNiemYet || (formData.maCoPhieu && formData.maCoPhieu !== '' && formData.maCoPhieu !== '--');
+        newValidation.niemYet = niemYetOk;
+
+        // Validate section: Công ty con/liên kết
+        newValidation.congTyCon = danhSachCongTy.length > 0;
+
+        // Validate section: Lịch sử hoạt động
+        var lichSuOk = danhGiaLichSu && danhGiaLichSu !== '';
+        newValidation.lichSuHD = lichSuOk;
+
+        // Validate section: Năng lực pháp luật dân sự
+        var nangLucOk = thanhLapHopLe && thanhLapHopLe !== '' && nangLucKyKet && nangLucKyKet !== '' && tinhTrangPhapLy && tinhTrangPhapLy !== '' && tranhChapViPham && tranhChapViPham !== '';
+        newValidation.nangLucPL = nangLucOk;
+        if (!nangLucOk) {
+            if (!thanhLapHopLe || thanhLapHopLe === '') errors.thanhLapHopLe = true;
+            if (!nangLucKyKet || nangLucKyKet === '') errors.nangLucKyKet = true;
+        }
+
+        // Validate section: Cơ cấu cổ đông
+        newValidation.coCauCoDong = coCauCoDongText && coCauCoDongText !== '';
+
+        // Validate section: Sơ đồ tổ chức
+        var soDoOk = coCauToChuc && coCauToChuc !== '' && toChucQuanTri && toChucQuanTri !== '' && toChucSXKD && toChucSXKD !== '' && kiemSoatNoiBo && kiemSoatNoiBo !== '';
+        newValidation.soDoToChuc = soDoOk;
+
+        // Validate section: Quản trị điều hành
+        var quanTriOk = nangLucBanLanhDao && nangLucBanLanhDao !== '' && nangLucDoiNgu && nangLucDoiNgu !== '' && coChePhánQuyen && coChePhánQuyen !== '';
+        newValidation.quanTriDieuHanh = quanTriOk;
+
+        // Validate section: Tình hình SXKD
+        var sxkdOk = sxkdBlocks.length > 0;
+        newValidation.tinhHinhSXKD = sxkdOk;
+
+        setSectionValidation(newValidation);
+        setValidationErrors(errors);
+
+        // Count completed sections
+        var totalSections = Object.keys(newValidation).length;
+        var completedSections = Object.values(newValidation).filter(function(v) { return v; }).length;
+
+        if (completedSections === totalSections) {
+            if (window.AuditHelpers && window.AuditHelpers.showToast) {
+                window.AuditHelpers.showToast('Đã lưu đánh giá thành công! Tất cả các mục đã hoàn thành.', 'success');
+            } else {
+                alert('Đã lưu đánh giá thành công! Tất cả các mục đã hoàn thành.');
+            }
+        } else {
+            if (window.AuditHelpers && window.AuditHelpers.showToast) {
+                window.AuditHelpers.showToast('Đã lưu! ' + completedSections + '/' + totalSections + ' mục hoàn thành.', 'success');
+            } else {
+                alert('Đã lưu! ' + completedSections + '/' + totalSections + ' mục hoàn thành.');
+            }
+        }
+    };
+
+    // Helper: render section completion badge
+    var renderSectionBadge = function(sectionKey) {
+        return e('span', {
+            className: sectionValidation[sectionKey] ? 'ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-100 bg-green-600/40 px-2 py-0.5 rounded-full' : 'hidden'
+        }, e('i', { className: 'fas fa-check-circle text-[10px]' }), ' Hoàn thành');
     };
 
     // ===== CKEditor wrapper =====
@@ -282,7 +371,8 @@ window.TabThongTinPhiTaiChinh = function () {
                 },
                     e('div', { className: 'flex items-center gap-2' },
                         e('i', { className: 'fas fa-building text-white' }),
-                        e('h4', { className: 'font-semibold text-white' }, 'Thông tin đăng ký kinh doanh')
+                        e('h4', { className: 'font-semibold text-white' }, 'Thông tin đăng ký kinh doanh'),
+                        renderSectionBadge('dkkd')
                     ),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('dkkd') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
@@ -407,7 +497,8 @@ window.TabThongTinPhiTaiChinh = function () {
                 },
                     e('div', { className: 'flex items-center gap-2' },
                         e('i', { className: 'fas fa-user-tie text-white' }),
-                        e('h4', { className: 'font-semibold text-white' }, 'Thông tin quản lý')
+                        e('h4', { className: 'font-semibold text-white' }, 'Thông tin quản lý'),
+                        renderSectionBadge('quanLy')
                     ),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('quanLy') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
@@ -457,7 +548,8 @@ window.TabThongTinPhiTaiChinh = function () {
                 },
                     e('div', { className: 'flex items-center gap-2' },
                         e('i', { className: 'fas fa-chart-line text-white' }),
-                        e('h4', { className: 'font-semibold text-white' }, 'Thông tin niêm yết')
+                        e('h4', { className: 'font-semibold text-white' }, 'Thông tin niêm yết'),
+                        renderSectionBadge('niemYet')
                     ),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('niemYet') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
@@ -545,7 +637,8 @@ window.TabThongTinPhiTaiChinh = function () {
                 },
                     e('div', { className: 'flex items-center gap-2' },
                         e('i', { className: 'fas fa-sitemap text-white' }),
-                        e('h4', { className: 'font-semibold text-white' }, 'Danh sách công ty con/liên kết')
+                        e('h4', { className: 'font-semibold text-white' }, 'Danh sách công ty con/liên kết'),
+                        renderSectionBadge('congTyCon')
                     ),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('congTyCon') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
@@ -650,7 +743,8 @@ window.TabThongTinPhiTaiChinh = function () {
                 },
                     e('div', { className: 'flex items-center gap-2' },
                         e('i', { className: 'fas fa-history text-white' }),
-                        e('h4', { className: 'font-semibold text-white' }, 'Lịch sử hoạt động')
+                        e('h4', { className: 'font-semibold text-white' }, 'Lịch sử hoạt động'),
+                        renderSectionBadge('lichSuHD')
                     ),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('lichSuHD') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
@@ -667,7 +761,8 @@ window.TabThongTinPhiTaiChinh = function () {
                 },
                     e('div', { className: 'flex items-center gap-2' },
                         e('i', { className: 'fas fa-balance-scale text-white' }),
-                        e('h4', { className: 'font-semibold text-white' }, 'Đánh giá năng lực pháp luật dân sự')
+                        e('h4', { className: 'font-semibold text-white' }, 'Đánh giá năng lực pháp luật dân sự'),
+                        renderSectionBadge('nangLucPL')
                     ),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('nangLucPL') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
@@ -843,6 +938,7 @@ window.TabThongTinPhiTaiChinh = function () {
                     onClick: () => togglePtc('coCauCoDong')
                 },
                     e('h4', { className: 'font-semibold text-white' }, 'Cơ cấu cổ đông/ thành viên góp vốn'),
+                    renderSectionBadge('coCauCoDong'),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('coCauCoDong') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
                 isPtcOpen('coCauCoDong') && e('div', { className: 'p-5' },
@@ -858,7 +954,8 @@ window.TabThongTinPhiTaiChinh = function () {
                 },
                     e('div', { className: 'flex items-center gap-2' },
                         e('i', { className: 'fas fa-sitemap text-white' }),
-                        e('h4', { className: 'font-semibold text-white' }, 'Sơ đồ tổ chức')
+                        e('h4', { className: 'font-semibold text-white' }, 'Sơ đồ tổ chức'),
+                        renderSectionBadge('soDoToChuc')
                     ),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('soDoToChuc') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
@@ -942,7 +1039,8 @@ window.TabThongTinPhiTaiChinh = function () {
                 },
                     e('div', { className: 'flex items-center gap-2' },
                         e('i', { className: 'fas fa-user-tie text-white' }),
-                        e('h4', { className: 'font-semibold text-white' }, 'Cơ chế quản trị điều hành, phân quyền, ủy nhiệm')
+                        e('h4', { className: 'font-semibold text-white' }, 'Cơ chế quản trị điều hành, phân quyền, ủy nhiệm'),
+                        renderSectionBadge('quanTriDieuHanh')
                     ),
                     e('i', { className: 'fas fa-chevron-' + (isPtcOpen('quanTriDieuHanh') ? 'up' : 'down') + ' text-white text-sm' })
                 ),
@@ -1197,6 +1295,40 @@ window.TabThongTinPhiTaiChinh = function () {
                 e('i', { className: 'fas fa-chevron-' + (isPtcOpen('mainTinhHinh') ? 'up' : 'down') + ' text-gray-400 text-sm' })
             ),
             isPtcOpen('mainTinhHinh') && e('div', { className: 'p-5' }, renderTinhHinhKD())
+        ),
+
+        // ===== VALIDATION SUMMARY + LƯU ĐÁNH GIÁ BUTTON =====
+        e('div', { className: 'bg-white border border-gray-200 rounded-lg p-5' },
+            // Progress summary
+            e('div', { className: 'flex items-center justify-between mb-4' },
+                e('div', { className: 'flex items-center gap-3' },
+                    e('h3', { className: 'font-semibold text-gray-800' }, 'Trạng thái hoàn thành'),
+                    e('span', { className: 'text-sm text-gray-500' },
+                        Object.values(sectionValidation).filter(function(v) { return v; }).length + '/' + Object.keys(sectionValidation).length + ' mục đã hoàn thành'
+                    )
+                ),
+                // Progress bar
+                e('div', { className: 'w-48 h-2 bg-gray-200 rounded-full overflow-hidden' },
+                    e('div', {
+                        className: 'h-full bg-[#006B68] rounded-full transition-all duration-500',
+                        style: { width: (Object.values(sectionValidation).filter(function(v) { return v; }).length / Object.keys(sectionValidation).length * 100) + '%' }
+                    })
+                )
+            ),
+            // Button row
+            e('div', { className: 'flex items-center justify-end gap-3' },
+                e('button', {
+                    onClick: handleCancel,
+                    className: 'px-5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors'
+                }, 'Hủy'),
+                e('button', {
+                    onClick: handleSave,
+                    className: 'px-5 py-2.5 bg-[#006B68] text-white rounded-lg text-sm hover:bg-[#005a57] transition-colors flex items-center gap-2 font-medium'
+                },
+                    e('i', { className: 'fas fa-check-circle' }),
+                    'Lưu đánh giá'
+                )
+            )
         )
     );
 };

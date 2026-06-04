@@ -5,6 +5,9 @@
 window.TabLuongTrinhDuyet = function () {
     const e = React.createElement;
 
+    // ===== SEGMENT STATE =====
+    const [activeSegment, setActiveSegment] = React.useState('luongTrinh');
+
     // ===== STATES =====
     const [thamQuyenPheDuyet, setThamQuyenPheDuyet] = React.useState('');
     const [confirmedThamQuyen, setConfirmedThamQuyen] = React.useState('');
@@ -241,11 +244,40 @@ window.TabLuongTrinhDuyet = function () {
 
     // ===== RENDER =====
 
+    // ===== SEGMENT SWITCH: Render Phân bổ tự động =====
+    // Keep this after every hook so switching segments never changes hook order.
+    if (activeSegment === 'phanBo') {
+        return e('div', { className: 'space-y-0' },
+            e('div', { className: 'flex items-center bg-gray-100 rounded-lg p-1 mb-5' },
+                e('button', {
+                    className: 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700',
+                    onClick: function () { setActiveSegment('luongTrinh'); }
+                }, 'Thiết lập luồng trình'),
+                e('button', {
+                    className: 'px-4 py-2 bg-white rounded-md shadow-sm text-sm font-medium text-[#006B68]',
+                    onClick: function () { setActiveSegment('phanBo'); }
+                }, 'Phân bổ tự động')
+            ),
+            window.TabPhanBoTuDong ? e(window.TabPhanBoTuDong) : e('div', { className: 'text-sm text-gray-400 text-center py-8' }, 'Đang tải...')
+        );
+    }
+
     // ========================
     // SAVED (READ-ONLY) MODE
     // ========================
     if (isSaved) {
         return e('div', { className: 'space-y-0' },
+            // SEGMENTED CONTROL
+            e('div', { className: 'flex items-center bg-gray-100 rounded-lg p-1 mb-5' },
+                e('button', {
+                    className: 'px-4 py-2 bg-white rounded-md shadow-sm text-sm font-medium text-[#006B68]',
+                    onClick: function () { setActiveSegment('luongTrinh'); }
+                }, 'Thiết lập luồng trình'),
+                e('button', {
+                    className: 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700',
+                    onClick: function () { setActiveSegment('phanBo'); }
+                }, 'Phân bổ tự động')
+            ),
             // HEADER: title + Chỉnh sửa button + Lịch sử phê duyệt
             e('div', { className: 'flex items-center gap-3 mb-5 pb-4 border-b border-gray-200' },
                 e('h2', { className: 'text-lg font-bold text-gray-800' }, 'Luồng trình duyệt'),
@@ -331,6 +363,18 @@ window.TabLuongTrinhDuyet = function () {
     // EDIT MODE
     // ========================
     return e('div', { className: 'space-y-0' },
+
+        // SEGMENTED CONTROL
+        e('div', { className: 'flex items-center bg-gray-100 rounded-lg p-1 mb-5' },
+            e('button', {
+                className: 'px-4 py-2 bg-white rounded-md shadow-sm text-sm font-medium text-[#006B68]',
+                onClick: function () { setActiveSegment('luongTrinh'); }
+            }, 'Thiết lập luồng trình'),
+            e('button', {
+                className: 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700',
+                onClick: function () { setActiveSegment('phanBo'); }
+            }, 'Phân bổ tự động')
+        ),
 
         // ============================================
         // HEADER: Luồng trình duyệt + Hủy/Lưu buttons

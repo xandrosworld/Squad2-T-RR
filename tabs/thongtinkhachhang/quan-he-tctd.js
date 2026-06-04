@@ -36,6 +36,108 @@ window.TabQuanHeTCTD = function () {
     const [showHoSoModal, setShowHoSoModal] = React.useState(false);
     const [showPhiTinDungModal, setShowPhiTinDungModal] = React.useState(false);
 
+    // ── TASK 4: Refresh toolbar state ──
+    const [refreshingXHTD, setRefreshingXHTD] = React.useState(false);
+    const [refreshingQHTD, setRefreshingQHTD] = React.useState(false);
+    const [refreshingCIC, setRefreshingCIC] = React.useState(false);
+    const [lastSyncTime, setLastSyncTime] = React.useState(null);
+    const [refreshToast, setRefreshToast] = React.useState(null);
+
+    const handleRefresh = (type) => {
+        const setters = { 'XHTD': setRefreshingXHTD, 'QHTD BIDV': setRefreshingQHTD, 'CIC': setRefreshingCIC };
+        const sectionIds = { 'XHTD': 'section-xhtd', 'QHTD BIDV': 'section-qhtd', 'CIC': 'section-cic' };
+        setters[type](true);
+        const sectionEl = document.getElementById(sectionIds[type]);
+        if (sectionEl) { sectionEl.classList.add('opacity-50', 'pointer-events-none'); }
+        setTimeout(() => {
+            setters[type](false);
+            if (sectionEl) { sectionEl.classList.remove('opacity-50', 'pointer-events-none'); }
+            const now = new Date();
+            setLastSyncTime(now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }));
+            setRefreshToast('Đã đồng bộ dữ liệu ' + type + ' thành công');
+            setTimeout(() => setRefreshToast(null), 3000);
+        }, 1500);
+    };
+
+    // ── TASK 5: CIC section state ──
+    const [cicLookupLoading, setCicLookupLoading] = React.useState(false);
+    const [cicToast, setCicToast] = React.useState(null);
+    const [showCicDetailModal, setShowCicDetailModal] = React.useState(null);
+    const [cicCheckboxes, setCicCheckboxes] = React.useState({ 0: false, 1: true, 2: false, 3: false });
+
+    const cicCreditRows = [
+        { tctd: 'Vietcombank', loaiQH: 'Cho vay', hanMuc: '50.000', duNo: '35.000', nhomNo: 'Nhóm 1', trangThai: 'Bình thường', soHD: 'HD-VCB-2024-0891', ngayCap: '15/03/2024', ngayDaoHan: '15/03/2029', laiSuat: '8.5%/năm', mucDich: 'Bổ sung vốn lưu động', tsbd: 'BĐS tại Quận 1, TP.HCM' },
+        { tctd: 'BIDV', loaiQH: 'Bảo lãnh', hanMuc: '30.000', duNo: '15.000', nhomNo: 'Nhóm 1', trangThai: 'Bình thường', soHD: 'HD-BIDV-2024-1205', ngayCap: '01/06/2024', ngayDaoHan: '01/06/2027', laiSuat: '7.8%/năm', mucDich: 'Bảo lãnh thực hiện hợp đồng', tsbd: 'Tiền gửi có kỳ hạn' },
+        { tctd: 'Techcombank', loaiQH: 'Cho vay', hanMuc: '20.000', duNo: '18.000', nhomNo: 'Nhóm 2', trangThai: 'Cần chú ý', soHD: 'HD-TCB-2023-0456', ngayCap: '20/11/2023', ngayDaoHan: '20/11/2026', laiSuat: '9.2%/năm', mucDich: 'Đầu tư TSCĐ', tsbd: 'MMTB nhà xưởng' },
+        { tctd: 'MB Bank', loaiQH: 'L/C', hanMuc: '10.000', duNo: '5.000', nhomNo: 'Nhóm 1', trangThai: 'Bình thường', soHD: 'HD-MB-2025-0102', ngayCap: '10/01/2025', ngayDaoHan: '10/07/2025', laiSuat: '6.5%/năm', mucDich: 'Nhập khẩu nguyên vật liệu', tsbd: 'Hàng hóa nhập khẩu' }
+    ];
+
+    const cicHistoryRows = [
+        { stt: 1, thoiDiem: 'T12/2025', tongDuNo: '68.500', tongHanMuc: '105.000', nhomNoMax: 'Nhóm 1', soTCTD: 4 },
+        { stt: 2, thoiDiem: 'T06/2025', tongDuNo: '72.100', tongHanMuc: '100.000', nhomNoMax: 'Nhóm 1', soTCTD: 4 },
+        { stt: 3, thoiDiem: 'T12/2024', tongDuNo: '65.200', tongHanMuc: '95.000', nhomNoMax: 'Nhóm 2', soTCTD: 3 },
+        { stt: 4, thoiDiem: 'T06/2024', tongDuNo: '58.800', tongHanMuc: '88.000', nhomNoMax: 'Nhóm 1', soTCTD: 3 }
+    ];
+
+    const handleCicLookup = () => {
+        setCicLookupLoading(true);
+        setTimeout(() => {
+            setCicLookupLoading(false);
+            setCicToast('Đã tra cứu CIC thành công');
+            setTimeout(() => setCicToast(null), 3000);
+        }, 1000);
+    };
+
+    const handleCicCheckbox = (idx) => {
+        setCicCheckboxes(prev => {
+            const next = { ...prev, [idx]: !prev[idx] };
+            setCicToast(next[idx] ? 'Đã thêm ' + cicCreditRows[idx].tctd + ' vào báo cáo' : 'Đã bỏ ' + cicCreditRows[idx].tctd + ' khỏi báo cáo');
+            setTimeout(() => setCicToast(null), 3000);
+            return next;
+        });
+    };
+
+    // ── TASK 6: ĐKUN state ──
+    const [showDkunHistoryModal, setShowDkunHistoryModal] = React.useState(null);
+    const [dkunEvaluations, setDkunEvaluations] = React.useState({});
+    const [dkunTexts, setDkunTexts] = React.useState({});
+    const [dkunErrors, setDkunErrors] = React.useState({});
+    const [dkunToast, setDkunToast] = React.useState(null);
+
+    const dkunRows = [
+        { stt: 1, dieuKien: 'Duy trì tỷ lệ nợ/VCSH ≤ 3', commitment: 'CMT_2025_001 - Bảo lãnh thầu dự án', trangThaiBPDX: 'Đã thực hiện', trangThai: 'Hoàn thành', trangThaiTone: 'green' },
+        { stt: 2, dieuKien: 'Cung cấp BCTC quý trong vòng 45 ngày', commitment: 'CMT_2025_002 - Cho vay ngắn hạn', trangThaiBPDX: 'Đã thực hiện', trangThai: 'Hoàn thành', trangThaiTone: 'green' },
+        { stt: 3, dieuKien: 'Không phân phối cổ tức khi chưa hoàn thành nghĩa vụ nợ', commitment: 'CMT_2025_003 - Cho vay TDH', trangThaiBPDX: 'Chưa thực hiện', trangThai: 'Vi phạm', trangThaiTone: 'red' },
+        { stt: 4, dieuKien: 'Bổ sung TSBĐ khi giá trị định giá giảm > 10%', commitment: 'TSBĐ_BĐS_01 - BĐS Quận 7', trangThaiBPDX: 'Đã thực hiện 1 phần', trangThai: 'Quá hạn', trangThaiTone: 'red' },
+        { stt: 5, dieuKien: 'Duy trì hệ số thanh toán nhanh ≥ 1.2', commitment: 'CMT_2025_004 - HMTD ngắn hạn', trangThaiBPDX: 'Đã thực hiện', trangThai: 'Hoàn thành', trangThaiTone: 'green' },
+        { stt: 6, dieuKien: 'Thông báo trước 30 ngày khi thay đổi cơ cấu sở hữu > 25%', commitment: 'CMT_2025_005 - Cho vay dự án', trangThaiBPDX: 'Chưa xác nhận', trangThai: 'Cần bổ sung', trangThaiTone: 'orange' }
+    ];
+
+    const dkunHistoryData = [
+        { date: '15/05/2026', user: 'Nguyễn Văn A - BPTĐRR', action: 'Đánh giá đầy đủ', note: 'Khách hàng đã cung cấp đầy đủ BCTC quý 1/2026' },
+        { date: '20/03/2026', user: 'Trần Thị B - BPĐX', action: 'Bổ sung ý kiến', note: 'Yêu cầu KH bổ sung biên bản họp HĐQT' },
+        { date: '10/01/2026', user: 'Nguyễn Văn A - BPTĐRR', action: 'Đánh giá đầy đủ', note: 'Rà soát định kỳ Q4/2025 - đạt yêu cầu' },
+        { date: '15/10/2025', user: 'Lê Văn C - BPTĐRR', action: 'Bổ sung ý kiến', note: 'Hệ số nợ/VCSH vượt ngưỡng, cần theo dõi' }
+    ];
+
+    const handleDkunEvalChange = (stt, value) => {
+        setDkunEvaluations(prev => ({ ...prev, [stt]: value }));
+        if (value === 'day-du') {
+            setDkunErrors(prev => { const n = { ...prev }; delete n[stt]; return n; });
+        }
+    };
+
+    const handleDkunSave = (stt) => {
+        const eval_ = dkunEvaluations[stt];
+        if (eval_ === 'bo-sung' && (!dkunTexts[stt] || dkunTexts[stt].trim() === '')) {
+            setDkunErrors(prev => ({ ...prev, [stt]: true }));
+            return;
+        }
+        setDkunErrors(prev => { const n = { ...prev }; delete n[stt]; return n; });
+        setDkunToast('Đã lưu đánh giá điều kiện #' + stt + ' thành công');
+        setTimeout(() => setDkunToast(null), 3000);
+    };
+
     // Dữ liệu cảnh báo sớm
     const canhBaoRows = [
         { stt: 1, tenDauHieu: 'Hệ số nợ tại BIDV cao', diemCanhBao: '24.458', mucCanhBao: 'Trung bình', mucTone: 'orange' },
@@ -1219,6 +1321,340 @@ window.TabQuanHeTCTD = function () {
             )
         );
 
+    // ── TASK 5: Render CIC Section ──
+    const renderCicSection = () => {
+        const nhomNoColors = { 'Nhóm 1': 'green', 'Nhóm 2': 'yellow', 'Nhóm 3': 'red' };
+        return sectionShell('tctdKhac', 'Quan hệ tại TCTD khác / CIC', 'fas fa-search-dollar',
+            e(React.Fragment, null,
+                // CIC toast
+                cicToast && e('div', {
+                    className: 'fixed top-4 right-4 z-[9999] bg-[#006B68] text-white px-5 py-3 rounded-lg shadow-xl text-sm font-medium flex items-center gap-2',
+                    style: { animation: 'modalSlideIn 0.25s ease-out' }
+                }, e('i', { className: 'fas fa-check-circle' }), cicToast),
+
+                // Header area
+                e('div', { className: 'flex flex-wrap items-center justify-between gap-3 mb-3 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm' },
+                    e('div', { className: 'flex items-center gap-4' },
+                        e('span', { className: 'text-sm text-gray-700' },
+                            e('i', { className: 'fas fa-calendar-alt text-[#006B68] mr-2 text-xs' }),
+                            'Ngày trả kết quả CIC: ',
+                            e('strong', { className: 'text-[#006B68]' }, '15/05/2026')
+                        )
+                    ),
+                    e('button', {
+                        className: 'px-4 py-2 bg-[#006B68] text-white rounded-lg text-xs font-semibold hover:bg-[#005B58] flex items-center gap-2 transition-colors',
+                        onClick: handleCicLookup,
+                        disabled: cicLookupLoading
+                    },
+                        e('i', { className: cicLookupLoading ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-search text-xs' }),
+                        'Tra cứu CIC'
+                    )
+                ),
+
+                // Table 1: Quan hệ tín dụng
+                e('div', { className: 'mb-3' },
+                    e('div', { className: 'text-sm font-semibold text-[#006B68] mb-2' }, 'Quan hệ tín dụng tại các TCTD'),
+                    e('div', { className: 'qhtctd-scroll bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm' },
+                        e('table', { className: 'w-full min-w-[960px] text-[13px]' },
+                            e('thead', null,
+                                e('tr', { className: 'bg-[#f8fbfb] border-b border-[#d7e5e3] text-[#006B68]' },
+                                    ['TCTD', 'Loại quan hệ', 'Hạn mức (tr.đ)', 'Dư nợ (tr.đ)', 'Nhóm nợ', 'Trạng thái', 'Xem chi tiết', 'Thêm vào báo cáo'].map(h =>
+                                        e('th', { key: h, className: 'px-3 py-2.5 text-left text-xs font-semibold border-r border-[#d7e5e3] whitespace-nowrap ' + (h === 'Thêm vào báo cáo' ? 'text-center' : '') + (h === 'Xem chi tiết' ? 'text-center' : '') }, h)
+                                    )
+                                )
+                            ),
+                            e('tbody', null,
+                                cicCreditRows.map((row, idx) =>
+                                    e('tr', { key: idx, className: 'border-b border-[#edf2f1] text-gray-700 hover:bg-[#f8fbfb]' },
+                                        e('td', { className: 'px-3 py-2.5 font-medium border-r border-[#edf2f1]' }, row.tctd),
+                                        e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1]' }, row.loaiQH),
+                                        e('td', { className: 'px-3 py-2.5 text-right border-r border-[#edf2f1] tabular-nums whitespace-nowrap' }, row.hanMuc),
+                                        e('td', { className: 'px-3 py-2.5 text-right border-r border-[#edf2f1] tabular-nums whitespace-nowrap' }, row.duNo),
+                                        e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1] text-center' }, statusPill(row.nhomNo, nhomNoColors[row.nhomNo] || 'green')),
+                                        e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1]' },
+                                            e('span', { className: 'text-xs font-medium ' + (row.trangThai === 'Cần chú ý' ? 'text-amber-600' : 'text-green-700') }, row.trangThai)
+                                        ),
+                                        e('td', { className: 'px-3 py-2.5 text-center border-r border-[#edf2f1]' },
+                                            e('button', {
+                                                className: 'text-[#006B68] hover:underline text-xs font-medium cursor-pointer',
+                                                onClick: () => setShowCicDetailModal(idx)
+                                            }, 'Xem chi tiết')
+                                        ),
+                                        e('td', { className: 'px-3 py-2.5 text-center' },
+                                            e('input', {
+                                                type: 'checkbox',
+                                                className: 'w-4 h-4 accent-[#006B68] cursor-pointer',
+                                                checked: !!cicCheckboxes[idx],
+                                                onChange: () => handleCicCheckbox(idx)
+                                            })
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                // Table 2: Lịch sử quan hệ tín dụng
+                e('div', { className: 'mb-3' },
+                    e('div', { className: 'text-sm font-semibold text-[#006B68] mb-2' }, 'Lịch sử quan hệ tín dụng và thông tin khác'),
+                    e('div', { className: 'qhtctd-scroll bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm' },
+                        e('table', { className: 'w-full min-w-[700px] text-[13px]' },
+                            e('thead', null,
+                                e('tr', { className: 'bg-[#f8fbfb] border-b border-[#d7e5e3] text-[#006B68]' },
+                                    ['STT', 'Thời điểm', 'Tổng dư nợ (tr.đ)', 'Tổng hạn mức (tr.đ)', 'Nhóm nợ cao nhất', 'Số TCTD'].map(h =>
+                                        e('th', { key: h, className: 'px-3 py-2.5 text-xs font-semibold border-r border-[#d7e5e3] whitespace-nowrap ' + (h === 'STT' ? 'text-center w-12' : h === 'Thời điểm' ? 'text-left' : 'text-center') }, h)
+                                    )
+                                )
+                            ),
+                            e('tbody', null,
+                                cicHistoryRows.map(row =>
+                                    e('tr', { key: row.stt, className: 'border-b border-[#edf2f1] text-gray-700 hover:bg-[#f8fbfb]' },
+                                        e('td', { className: 'px-3 py-2.5 text-center border-r border-[#edf2f1]' }, row.stt),
+                                        e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1] font-medium' }, row.thoiDiem),
+                                        e('td', { className: 'px-3 py-2.5 text-right border-r border-[#edf2f1] tabular-nums' }, row.tongDuNo),
+                                        e('td', { className: 'px-3 py-2.5 text-right border-r border-[#edf2f1] tabular-nums' }, row.tongHanMuc),
+                                        e('td', { className: 'px-3 py-2.5 text-center border-r border-[#edf2f1]' }, statusPill(row.nhomNoMax, nhomNoColors[row.nhomNoMax] || 'green')),
+                                        e('td', { className: 'px-3 py-2.5 text-center' }, row.soTCTD)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        );
+    };
+
+    // ── TASK 5: CIC Detail Modal ──
+    const renderCicDetailModal = () => {
+        if (showCicDetailModal === null) return null;
+        const row = cicCreditRows[showCicDetailModal];
+        if (!row) return null;
+        return ReactDOM.createPortal(e('div', {
+            className: 'fixed inset-0 z-50 flex items-center justify-center',
+            style: { background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)' },
+            onClick: () => setShowCicDetailModal(null)
+        },
+            e('div', {
+                className: 'bg-white rounded-xl shadow-2xl w-full max-w-[580px] mx-4 overflow-hidden',
+                style: { animation: 'modalSlideIn 0.25s ease-out' },
+                onClick: ev => ev.stopPropagation()
+            },
+                e('div', { className: 'flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-[#006B68]' },
+                    e('h3', { className: 'text-base font-bold text-white' }, 'Chi tiết CIC - ' + row.tctd),
+                    e('button', {
+                        className: 'w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 text-white/70 hover:text-white transition-colors',
+                        onClick: () => setShowCicDetailModal(null)
+                    }, e('i', { className: 'fas fa-times text-sm' }))
+                ),
+                e('div', { className: 'p-5 space-y-3' },
+                    [['Tổ chức tín dụng', row.tctd], ['Loại quan hệ', row.loaiQH], ['Số hợp đồng', row.soHD], ['Ngày cấp', row.ngayCap], ['Ngày đáo hạn', row.ngayDaoHan], ['Lãi suất', row.laiSuat], ['Hạn mức (tr.đ)', row.hanMuc], ['Dư nợ (tr.đ)', row.duNo], ['Nhóm nợ', row.nhomNo], ['Mục đích', row.mucDich], ['TSBĐ', row.tsbd]].map(([label, value]) =>
+                        e('div', { key: label, className: 'grid grid-cols-[180px_1fr] gap-3 items-start text-sm border-b border-gray-100 pb-2' },
+                            e('span', { className: 'text-gray-500 font-medium' }, label),
+                            e('span', { className: 'font-semibold text-gray-800' }, value)
+                        )
+                    ),
+                    e('div', { className: 'flex justify-end pt-2' },
+                        e('button', {
+                            className: 'px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors',
+                            onClick: () => setShowCicDetailModal(null)
+                        }, 'Đóng')
+                    )
+                )
+            )
+        ), document.body);
+    };
+
+    // ── TASK 6: Render ĐKUN Section ──
+    const renderDkunSection = () => {
+        const dkunStatusPill = (text, tone) => {
+            const tones = { green: 'bg-[#e6f4da] text-[#2b7a0b]', red: 'bg-red-50 text-red-700', orange: 'bg-amber-50 text-amber-700' };
+            return e('span', { className: 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ' + (tones[tone] || tones.green) },
+                e('span', { className: 'w-1.5 h-1.5 rounded-full ' + (tone === 'green' ? 'bg-green-500' : tone === 'red' ? 'bg-red-500' : 'bg-amber-500') }),
+                text
+            );
+        };
+
+        return sectionShell('dieuKienUyNhiem', 'Tình hình thực hiện ĐKUN của BIDV', 'fas fa-tasks',
+            e(React.Fragment, null,
+                // ĐKUN toast
+                dkunToast && e('div', {
+                    className: 'fixed top-4 right-4 z-[9999] bg-[#006B68] text-white px-5 py-3 rounded-lg shadow-xl text-sm font-medium flex items-center gap-2',
+                    style: { animation: 'modalSlideIn 0.25s ease-out' }
+                }, e('i', { className: 'fas fa-check-circle' }), dkunToast),
+
+                // Summary cards
+                e('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-3 mb-4' },
+                    e('div', { className: 'bg-white border border-gray-200 rounded-xl p-4 shadow-sm' },
+                        e('div', { className: 'text-xs text-gray-500 mb-1' }, 'Tổng điều kiện'),
+                        e('div', { className: 'text-2xl font-bold text-gray-800' }, '12'),
+                        e('div', { className: 'mt-1' }, e('i', { className: 'fas fa-list-check text-gray-400 text-sm' }))
+                    ),
+                    e('div', { className: 'bg-white border border-green-200 rounded-xl p-4 shadow-sm' },
+                        e('div', { className: 'text-xs text-gray-500 mb-1' }, 'Đã thực hiện'),
+                        e('div', { className: 'text-2xl font-bold text-green-600' }, '8'),
+                        e('div', { className: 'mt-1' }, e('i', { className: 'fas fa-check-circle text-green-400 text-sm' }))
+                    ),
+                    e('div', { className: 'bg-white border border-red-200 rounded-xl p-4 shadow-sm' },
+                        e('div', { className: 'text-xs text-gray-500 mb-1' }, 'Vi phạm/quá hạn'),
+                        e('div', { className: 'text-2xl font-bold text-red-600' }, '2'),
+                        e('div', { className: 'mt-1' }, e('i', { className: 'fas fa-exclamation-triangle text-red-400 text-sm' }))
+                    ),
+                    e('div', { className: 'bg-white border border-amber-200 rounded-xl p-4 shadow-sm' },
+                        e('div', { className: 'text-xs text-gray-500 mb-1' }, 'Cần bổ sung ý kiến'),
+                        e('div', { className: 'text-2xl font-bold text-amber-600' }, '2'),
+                        e('div', { className: 'mt-1' }, e('i', { className: 'fas fa-comment-dots text-amber-400 text-sm' }))
+                    )
+                ),
+
+                // Table: Đánh giá ĐKUN
+                e('div', { className: 'text-sm font-semibold text-[#006B68] mb-2' }, 'Đánh giá ĐKUN'),
+                e('div', { className: 'qhtctd-scroll bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm' },
+                    e('table', { className: 'w-full min-w-[1200px] text-[13px]' },
+                        e('thead', null,
+                            e('tr', { className: 'bg-[#f8fbfb] border-b border-[#d7e5e3] text-[#006B68]' },
+                                ['STT', 'Điều kiện', 'Commitment/TSBĐ liên quan', 'Trạng thái BPĐX', 'Kết quả đánh giá BPTĐRR', 'Diễn giải đánh giá', 'File đánh giá', 'Trạng thái', 'Actions'].map((h, i) =>
+                                    e('th', {
+                                        key: h,
+                                        className: 'px-3 py-2.5 text-left text-xs font-semibold border-r border-[#d7e5e3] whitespace-nowrap ' +
+                                            (i === 0 ? 'w-10 text-center' : i === 1 ? 'min-w-[200px]' : i === 4 ? 'min-w-[180px]' : i === 5 ? 'min-w-[180px]' : i === 8 ? 'w-[100px] text-center' : '')
+                                    }, h)
+                                )
+                            )
+                        ),
+                        e('tbody', null,
+                            dkunRows.map(row => {
+                                const evalMode = dkunEvaluations[row.stt] || '';
+                                const hasError = dkunErrors[row.stt];
+                                return e('tr', { key: row.stt, className: 'border-b border-[#edf2f1] text-gray-700 hover:bg-[#f8fbfb] align-top' },
+                                    e('td', { className: 'px-3 py-2.5 text-center border-r border-[#edf2f1]' }, row.stt),
+                                    e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1] leading-5 font-medium' }, row.dieuKien),
+                                    e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1] leading-5 text-xs text-gray-600' }, row.commitment),
+                                    e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1] leading-5 text-xs font-medium ' +
+                                        (row.trangThaiBPDX === 'Chưa thực hiện' ? 'text-red-600' : row.trangThaiBPDX === 'Đã thực hiện 1 phần' ? 'text-amber-600' : row.trangThaiBPDX === 'Chưa xác nhận' ? 'text-gray-500' : 'text-green-700') }, row.trangThaiBPDX),
+                                    // Kết quả đánh giá BPTĐRR
+                                    e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1]' },
+                                        e('div', { className: 'space-y-1.5' },
+                                            e('label', { className: 'flex items-center gap-1.5 text-xs cursor-pointer' },
+                                                e('input', { type: 'radio', name: 'dkun-eval-' + row.stt, className: 'w-3.5 h-3.5 accent-[#006B68]', checked: evalMode === 'day-du', onChange: () => handleDkunEvalChange(row.stt, 'day-du') }),
+                                                'Đã đánh giá đầy đủ'
+                                            ),
+                                            e('label', { className: 'flex items-center gap-1.5 text-xs cursor-pointer' },
+                                                e('input', { type: 'radio', name: 'dkun-eval-' + row.stt, className: 'w-3.5 h-3.5 accent-[#006B68]', checked: evalMode === 'bo-sung', onChange: () => handleDkunEvalChange(row.stt, 'bo-sung') }),
+                                                'Bổ sung ý kiến'
+                                            )
+                                        )
+                                    ),
+                                    // Diễn giải đánh giá
+                                    e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1]' },
+                                        evalMode === 'bo-sung'
+                                            ? e('div', null,
+                                                e('textarea', {
+                                                    className: 'w-full min-h-[60px] resize-y border rounded-lg px-2 py-1.5 text-xs leading-5 text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#006B68]/20 focus:border-[#006B68] ' + (hasError ? 'border-red-400 bg-red-50' : 'border-gray-300'),
+                                                    placeholder: 'Nhập diễn giải đánh giá...',
+                                                    value: dkunTexts[row.stt] || '',
+                                                    onChange: ev => setDkunTexts(prev => ({ ...prev, [row.stt]: ev.target.value }))
+                                                }),
+                                                hasError && e('div', { className: 'text-red-500 text-[10px] mt-1 font-medium' }, 'Vui lòng nhập diễn giải đánh giá'),
+                                                e('button', {
+                                                    className: 'mt-1.5 px-3 py-1 bg-[#006B68] text-white rounded text-[10px] font-semibold hover:bg-[#005B58] transition-colors',
+                                                    onClick: () => handleDkunSave(row.stt)
+                                                }, 'Lưu')
+                                              )
+                                            : e('span', { className: 'text-xs text-gray-400 italic' }, evalMode === 'day-du' ? 'Đã đánh giá đầy đủ' : '—')
+                                    ),
+                                    // File đánh giá
+                                    e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1] text-center' },
+                                        e('span', { className: 'text-xs text-gray-400 italic' }, '—')
+                                    ),
+                                    // Trạng thái
+                                    e('td', { className: 'px-3 py-2.5 border-r border-[#edf2f1] text-center' },
+                                        dkunStatusPill(row.trangThai, row.trangThaiTone)
+                                    ),
+                                    // Actions
+                                    e('td', { className: 'px-3 py-2.5 text-center' },
+                                        e('div', { className: 'flex items-center justify-center gap-2' },
+                                            e('button', {
+                                                className: 'w-7 h-7 inline-flex items-center justify-center rounded-md hover:bg-[#006B68]/10 text-[#006B68] transition-colors',
+                                                title: 'Lịch sử đánh giá',
+                                                onClick: () => setShowDkunHistoryModal(row.stt)
+                                            }, e('i', { className: 'fas fa-history text-xs' })),
+                                            e('button', {
+                                                className: 'w-7 h-7 inline-flex items-center justify-center rounded-md hover:bg-blue-50 text-blue-600 transition-colors',
+                                                title: 'Upload file'
+                                            }, e('i', { className: 'fas fa-upload text-xs' })),
+                                            e('button', {
+                                                className: 'w-7 h-7 inline-flex items-center justify-center rounded-md hover:bg-green-50 text-green-600 transition-colors',
+                                                title: 'Download'
+                                            }, e('i', { className: 'fas fa-download text-xs' }))
+                                        )
+                                    )
+                                );
+                            })
+                        )
+                    )
+                )
+            )
+        );
+    };
+
+    // ── TASK 6: ĐKUN History Modal ──
+    const renderDkunHistoryModal = () => {
+        if (showDkunHistoryModal === null) return null;
+        const row = dkunRows.find(r => r.stt === showDkunHistoryModal);
+        return ReactDOM.createPortal(e('div', {
+            className: 'fixed inset-0 z-50 flex items-center justify-center',
+            style: { background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)' },
+            onClick: () => setShowDkunHistoryModal(null)
+        },
+            e('div', {
+                className: 'bg-white rounded-xl shadow-2xl w-full max-w-[640px] mx-4 overflow-hidden',
+                style: { animation: 'modalSlideIn 0.25s ease-out' },
+                onClick: ev => ev.stopPropagation()
+            },
+                e('div', { className: 'flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-[#006B68]' },
+                    e('h3', { className: 'text-base font-bold text-white' }, 'Lịch sử đánh giá điều kiện'),
+                    e('button', {
+                        className: 'w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 text-white/70 hover:text-white transition-colors',
+                        onClick: () => setShowDkunHistoryModal(null)
+                    }, e('i', { className: 'fas fa-times text-sm' }))
+                ),
+                row && e('div', { className: 'px-5 py-3 bg-[#f4f7f7] border-b border-gray-200 text-sm text-gray-700' },
+                    e('strong', null, 'Điều kiện: '), row.dieuKien
+                ),
+                e('div', { className: 'p-5' },
+                    e('div', { className: 'relative pl-6' },
+                        // Timeline line
+                        e('div', { className: 'absolute left-2 top-2 bottom-2 w-0.5 bg-gray-200' }),
+                        // Timeline items
+                        dkunHistoryData.map((item, idx) =>
+                            e('div', { key: idx, className: 'relative mb-5 last:mb-0' },
+                                // Dot
+                                e('div', { className: 'absolute -left-4 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow ' + (item.action === 'Đánh giá đầy đủ' ? 'bg-green-500' : 'bg-amber-500') }),
+                                // Content
+                                e('div', { className: 'bg-gray-50 rounded-lg p-3 border border-gray-100' },
+                                    e('div', { className: 'flex items-center justify-between mb-1' },
+                                        e('span', { className: 'text-xs font-semibold text-[#006B68]' }, item.date),
+                                        e('span', { className: 'text-[10px] px-2 py-0.5 rounded-full font-semibold ' + (item.action === 'Đánh giá đầy đủ' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700') }, item.action)
+                                    ),
+                                    e('div', { className: 'text-xs text-gray-500 mb-1' }, item.user),
+                                    e('div', { className: 'text-xs text-gray-700 leading-5' }, item.note)
+                                )
+                            )
+                        )
+                    ),
+                    e('div', { className: 'flex justify-end pt-4' },
+                        e('button', {
+                            className: 'px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors',
+                            onClick: () => setShowDkunHistoryModal(null)
+                        }, 'Đóng')
+                    )
+                )
+            )
+        ), document.body);
+    };
+
     // ── Modal: Chi tiết cảnh báo ──
     const renderCanhBaoModal = () => {
         if (!showCanhBaoModal) return null;
@@ -1482,15 +1918,55 @@ window.TabQuanHeTCTD = function () {
         ), document.body);
     };
 
+    // ── TASK 4: Render refresh toolbar ──
+    const renderRefreshToolbar = () =>
+        e('div', { className: 'bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm flex flex-wrap items-center gap-3' },
+            e('span', { className: 'text-sm font-semibold text-[#006B68] mr-1' },
+                e('i', { className: 'fas fa-sync-alt mr-1.5 text-xs' }),
+                'Đồng bộ dữ liệu'
+            ),
+            e('div', { className: 'flex items-center gap-2 flex-wrap' },
+                e('button', {
+                    className: 'px-3 py-1.5 border border-[#006B68] text-[#006B68] rounded-lg text-xs font-medium hover:bg-[#006B68]/5 flex items-center gap-1.5 transition-colors',
+                    onClick: () => handleRefresh('XHTD'),
+                    disabled: refreshingXHTD
+                }, e('i', { className: refreshingXHTD ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-sync-alt text-xs' }), 'Refresh XHTD'),
+                e('button', {
+                    className: 'px-3 py-1.5 border border-[#006B68] text-[#006B68] rounded-lg text-xs font-medium hover:bg-[#006B68]/5 flex items-center gap-1.5 transition-colors',
+                    onClick: () => handleRefresh('QHTD BIDV'),
+                    disabled: refreshingQHTD
+                }, e('i', { className: refreshingQHTD ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-sync-alt text-xs' }), 'Refresh QHTD BIDV'),
+                e('button', {
+                    className: 'px-3 py-1.5 border border-[#006B68] text-[#006B68] rounded-lg text-xs font-medium hover:bg-[#006B68]/5 flex items-center gap-1.5 transition-colors',
+                    onClick: () => handleRefresh('CIC'),
+                    disabled: refreshingCIC
+                }, e('i', { className: refreshingCIC ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-sync-alt text-xs' }), 'Refresh CIC')
+            ),
+            lastSyncTime && e('span', { className: 'ml-auto text-xs text-gray-500 italic flex items-center gap-1.5' },
+                e('i', { className: 'fas fa-clock text-[10px]' }),
+                'Thời điểm đồng bộ gần nhất: ' + lastSyncTime
+            )
+        );
+
     return e('div', { className: 'space-y-4 pb-4' },
-        renderGeneralInfo(),
-        renderRatingSection(),
-        renderBidvSection(),
-        renderTctdKhacSection(),
+        // TASK 4: Refresh toolbar + toast
+        renderRefreshToolbar(),
+        refreshToast && e('div', {
+            className: 'fixed top-4 right-4 z-[9999] bg-[#006B68] text-white px-5 py-3 rounded-lg shadow-xl text-sm font-medium flex items-center gap-2',
+            style: { animation: 'modalSlideIn 0.25s ease-out' }
+        }, e('i', { className: 'fas fa-check-circle' }), refreshToast),
+        e('div', { id: 'section-xhtd' }, renderGeneralInfo()),
+        e('div', { id: 'section-xhtd' }, renderRatingSection()),
+        e('div', { id: 'section-qhtd' }, renderBidvSection()),
+        e('div', { id: 'section-cic' }, renderTctdKhacSection()),
+        e('div', { id: 'section-cic' }, renderCicSection()),
+        renderDkunSection(),
         renderKhlqSection(),
         renderKhlqSectionV2(),
         renderCanhBaoModal(),
         renderHoSoModal(),
-        renderPhiTinDungModal()
+        renderPhiTinDungModal(),
+        renderCicDetailModal(),
+        renderDkunHistoryModal()
     );
 };

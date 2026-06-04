@@ -293,13 +293,22 @@ function Header({ onSwitchFlow, roleLabel } = {}) {
     );
 }
 
-function PageHeader({ activeMainTab, luongTrinhSaved }) {
+function PageHeader({ activeMainTab, luongTrinhSaved, tabSaveStatus, onSave, onTrinhDuyet, caseStatus }) {
     const isLuongTrinhTab = activeMainTab === 'luongTrinhDuyet';
+    const savedTabs = tabSaveStatus || {};
+    const currentStatus = caseStatus || 'Chờ xử lý';
+    var tabLabels = [
+        { id: 'thongTinKH', label: 'TTKH' },
+        { id: 'hoSoKH', label: 'TLTD' },
+        { id: 'capTinDung', label: 'CTD' },
+        { id: 'pheDuyetTinDung', label: 'PDTD' },
+        { id: 'luongTrinhDuyet', label: 'LTD' }
+    ];
     const summaryRows = [
         [
             ['Số hồ sơ:', 'TD-120-25-52656565'],
             ['Loại Hồ sơ:', 'Tái cấp'],
-            ['Trạng thái', 'Chờ xử lý'],
+            ['Trạng thái', currentStatus],
             ['Bước xử lý', 'Lập BCTĐRR'],
             ['Người xử lý:', 'Nguyễn Châu Giang (159420)']
         ],
@@ -326,16 +335,29 @@ function PageHeader({ activeMainTab, luongTrinhSaved }) {
                 'Hồ sơ trình cấp tín dụng'
             ),
             e('div', { className: 'case-actions' },
+                e('div', { className: 'flex items-center gap-1 mr-3' },
+                    tabLabels.map(function(tab) {
+                        var isSaved = savedTabs[tab.id];
+                        return e('div', {
+                            key: tab.id,
+                            className: 'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium ' +
+                                (isSaved ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400')
+                        },
+                            e('i', { className: isSaved ? 'fas fa-check-circle text-green-500 text-[9px]' : 'far fa-circle text-gray-300 text-[9px]' }),
+                            tab.label
+                        );
+                    })
+                ),
                 e('button', {
                     className: 'case-btn case-btn-outline'
                 }, e('i', { className: 'fas fa-undo-alt' }), 'Trả lại'),
-                !isLuongTrinhTab && e('button', {
+                !e('button', {
                     className: 'case-btn case-btn-primary',
-                    onClick: () => { alert('Đã lưu thành công!'); }
+                    onClick: onSave
                 }, e('i', { className: 'fas fa-save' }), 'Lưu'),
                 isLuongTrinhTab && e('button', {
                     className: luongTrinhSaved ? 'btn-trinh-duyet' : 'btn-trinh-duyet-disabled',
-                    onClick: luongTrinhSaved ? () => { alert('Đã trình duyệt thành công!'); } : undefined,
+                    onClick: onTrinhDuyet,
                     disabled: !luongTrinhSaved,
                     style: !luongTrinhSaved ? { opacity: 0.5, cursor: 'not-allowed' } : {}
                 },
@@ -727,6 +749,28 @@ function BCDXScreen({ selectedBCDX, onBack, initialMainTab }) {
     const [showLichSuPopup, setShowLichSuPopup] = React.useState(false);
     const [lichSuPdfViewer, setLichSuPdfViewer] = React.useState(null);
 
+    // === Save/Submit workflow (dau viec 15) ===
+    const [tabSaveStatus, setTabSaveStatus] = React.useState({});
+    const [caseStatus, setCaseStatus] = React.useState('Chờ xử lý');
+    const [showTrinhDuyetPopup, setShowTrinhDuyetPopup] = React.useState(false);
+
+    function handleGlobalSave() {
+        var ns = Object.assign({}, tabSaveStatus);
+        ns[activeMainTab] = true;
+        setTabSaveStatus(ns);
+        if (window.AuditHelpers) { window.AuditHelpers.showToast('\u2713 Đã lưu thành công tab hiện tại'); }
+        else { alert('Đã lưu thành công!'); }
+    }
+
+    function handleTrinhDuyet() { setShowTrinhDuyetPopup(true); }
+
+    function confirmTrinhDuyet() {
+        setCaseStatus('Đã trình duyệt');
+        setShowTrinhDuyetPopup(false);
+        if (window.AuditHelpers) { window.AuditHelpers.showToast('\u2713 Đã trình duyệt hồ sơ thành công!'); }
+        else { alert('Đã trình duyệt thành công!'); }
+    }
+
     // Expose setters to window for cross-component communication
     React.useEffect(() => {
         window.switchToSubTab = (tabId) => setActiveSubTab(tabId);
@@ -766,7 +810,7 @@ function BCDXScreen({ selectedBCDX, onBack, initialMainTab }) {
         e('div', { className: 'flex-1 flex flex-col h-full overflow-hidden' },
             e(Header, { onSwitchFlow: onBack, roleLabel: 'Cán bộ TĐRR' }),
             // PageHeader (info card, breadcrumb, action buttons) - NO tabs
-            e(PageHeader, { activeMainTab, luongTrinhSaved }),
+            e(PageHeader, { activeMainTab, luongTrinhSaved, tabSaveStatus, onSave: handleGlobalSave, onTrinhDuyet: handleTrinhDuyet, caseStatus }),
             // Body: Left nav panel + content area
             e('div', { className: 'flex flex-1 overflow-hidden bg-[#eff2f5]' },
                 // Left nav panel
@@ -1384,6 +1428,44 @@ function BCDXScreen({ selectedBCDX, onBack, initialMainTab }) {
                             )
                         )
                     )
+                )
+            )
+        )
+    ,
+
+        // ===== POPUP: Trinh duyet xac nhan =====
+        showTrinhDuyetPopup && e('div', {
+            className: 'fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4',
+            onClick: function(ev) { if (ev.target === ev.currentTarget) setShowTrinhDuyetPopup(false); }
+        },
+            e('div', { className: 'bg-white rounded-xl shadow-2xl w-full max-w-md' },
+                e('div', { className: 'flex items-center gap-3 px-5 py-4 border-b border-gray-200' },
+                    e('div', { className: 'w-10 h-10 rounded-full flex items-center justify-center bg-green-100' },
+                        e('i', { className: 'fas fa-paper-plane text-green-600' })
+                    ),
+                    e('div', null,
+                        e('h3', { className: 'font-semibold text-gray-800' }, 'Xác nhận trình duyệt'),
+                        e('p', { className: 'text-xs text-gray-500' }, 'Hồ sơ TD-120-25-52656565')
+                    )
+                ),
+                e('div', { className: 'px-5 py-4' },
+                    e('p', { className: 'text-sm text-gray-600 mb-3' }, 'Bạn có chắc chắn muốn trình duyệt hồ sơ này?'),
+                    e('div', { className: 'bg-green-50 border border-green-200 rounded-lg p-3' },
+                        e('p', { className: 'text-xs text-green-700' },
+                            e('i', { className: 'fas fa-check-circle mr-1' }),
+                            'Hồ sơ sẵn sàng trình duyệt.'
+                        )
+                    )
+                ),
+                e('div', { className: 'flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-100 bg-gray-50 rounded-b-xl' },
+                    e('button', {
+                        className: 'px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg',
+                        onClick: function() { setShowTrinhDuyetPopup(false); }
+                    }, 'Hủy'),
+                    e('button', {
+                        className: 'px-5 py-2 bg-[#006B68] text-white text-sm font-medium rounded-lg hover:bg-[#005B58] flex items-center gap-2',
+                        onClick: confirmTrinhDuyet
+                    }, e('i', { className: 'fas fa-paper-plane text-xs' }), 'Xác nhận trình duyệt')
                 )
             )
         )

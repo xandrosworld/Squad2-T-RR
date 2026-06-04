@@ -551,6 +551,10 @@ textarea:focus {
         display: none;
     }
 
+    .nav-panel {
+        display: none;
+    }
+
     /* Header compact */
     .header {
         padding: 0 10px;
@@ -559,6 +563,56 @@ textarea:focus {
 
     .header img {
         height: 28px !important;
+    }
+
+    .case-header {
+        padding: 7px 10px 9px;
+    }
+
+    .case-breadcrumb {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .case-title-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .case-title {
+        font-size: 16px;
+        line-height: 1.25;
+    }
+
+    .case-actions {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        padding-bottom: 2px;
+    }
+
+    .case-summary-mockup {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 10px;
+        row-gap: 5px;
+        width: 100%;
+    }
+
+    .case-summary-item {
+        white-space: normal;
+    }
+
+    .credit-main-segments,
+    .credit-inner-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
+    .credit-main-segments > button,
+    .credit-inner-tabs > button {
+        flex: 0 0 auto;
     }
 
     /* ===== GLOBAL GRID: tất cả grid → 1 cột trên mobile ===== */
@@ -3694,4 +3748,27 @@ textarea:focus {
     animation: qhtctd-sparkle 2.4s ease-in-out infinite;
     color: #eab308;
     display: inline-block;
+}
+
+/* Keep the approval workspace usable on narrow screens. */
+@media (max-width: 768px) {
+    .nav-panel {
+        display: none !important;
+    }
+
+    .credit-workspace {
+        min-width: 0;
+    }
+}
+
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }

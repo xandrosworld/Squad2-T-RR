@@ -10,6 +10,26 @@ window.TabDieuKienTinDung = function () {
     const [selectedDieuKien, setSelectedDieuKien] = React.useState(null);
     const [editFormData, setEditFormData] = React.useState({});
 
+    // State cho trạng thái xác nhận từng điều kiện
+    const [validatedRows, setValidatedRows] = React.useState({});
+
+    // Xác nhận điều kiện
+    var handleValidateRow = function(stt) {
+        var newValidated = Object.assign({}, validatedRows);
+        newValidated[stt] = true;
+        setValidatedRows(newValidated);
+        if (window.AuditHelpers && window.AuditHelpers.showToast) {
+            window.AuditHelpers.showToast('Đã xác nhận điều kiện #' + stt, 'success');
+        }
+    };
+
+    // Hủy xác nhận
+    var handleUnvalidateRow = function(stt) {
+        var newValidated = Object.assign({}, validatedRows);
+        newValidated[stt] = false;
+        setValidatedRows(newValidated);
+    };
+
     // State cho dropdown menu "Thêm điều kiện"
     const [showAddMenu, setShowAddMenu] = React.useState(false);
 
@@ -237,7 +257,13 @@ window.TabDieuKienTinDung = function () {
             e('div', { className: 'px-4 py-2 border-b border-gray-200 flex items-center justify-between' },
                 e('div', { className: 'flex items-center gap-2' },
                     e('span', { className: 'text-sm font-medium text-gray-700' }, 'Danh sách điều kiện gắn với commitment'),
-                    e('span', { className: 'bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs' }, dieuKienData.length)
+                    e('span', { className: 'bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs' }, dieuKienData.length),
+                    // Validation progress
+                    Object.values(validatedRows).filter(function(v) { return v; }).length > 0 &&
+                        e('span', { className: 'inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full' },
+                            e('i', { className: 'fas fa-check-circle text-[10px]' }),
+                            Object.values(validatedRows).filter(function(v) { return v; }).length + '/' + dieuKienData.length + ' đã xác nhận'
+                        )
                 ),
                 e('button', { className: 'btn btn-outline text-xs py-1 px-3' },
                     e('i', { className: 'fas fa-sort text-xs mr-1' }), 'Sắp xếp'
@@ -246,7 +272,7 @@ window.TabDieuKienTinDung = function () {
 
             // Bảng với scroll ngang
             e('div', { className: 'overflow-x-auto' },
-                e('table', { className: 'w-full text-sm', style: { minWidth: '1400px' } },
+                e('table', { className: 'w-full text-sm', style: { minWidth: '1500px' } },
                     e('thead', null,
                         e('tr', { className: 'bg-gray-50 text-left border-b border-gray-200' },
                             e('th', { className: 'px-3 py-2 text-gray-600 font-medium w-8' },
@@ -261,12 +287,13 @@ window.TabDieuKienTinDung = function () {
                             e('th', { className: 'px-3 py-2 text-gray-600 font-medium w-28' }, 'Cam kết tại HĐTD'),
                             e('th', { className: 'px-3 py-2 text-gray-600 font-medium w-36' }, 'Điều kiện tiên quyết'),
                             e('th', { className: 'px-3 py-2 text-gray-600 font-medium w-24' }, 'Trạng thái'),
-                            e('th', { className: 'px-3 py-2 text-gray-600 font-medium w-44' }, 'User cập nhật gần nhất')
+                            e('th', { className: 'px-3 py-2 text-gray-600 font-medium w-44' }, 'User cập nhật gần nhất'),
+                            e('th', { className: 'px-3 py-2 text-gray-600 font-medium w-28 text-center' }, 'Xác nhận')
                         )
                     ),
                     e('tbody', null,
-                        dieuKienData.map((row, idx) =>
-                            e('tr', { key: idx, className: 'border-t border-gray-100 hover:bg-gray-50' },
+                        dieuKienData.map(function(row, idx) {
+                            return e('tr', { key: idx, className: 'border-t border-gray-100 hover:bg-gray-50' + (validatedRows[row.stt] ? ' bg-green-50/30' : '') },
                                 e('td', { className: 'px-3 py-2' },
                                     e('input', { type: 'checkbox', className: 'rounded' })
                                 ),
@@ -302,7 +329,7 @@ window.TabDieuKienTinDung = function () {
                                         e('div', { className: 'flex items-center gap-1' },
                                             e('button', {
                                                 className: 'p-1 text-gray-400 hover:text-blue-600',
-                                                onClick: () => {
+                                                onClick: function() {
                                                     setSelectedDieuKien(row);
                                                     setEditFormData({
                                                         doiTuong: 'commitment',
@@ -326,9 +353,33 @@ window.TabDieuKienTinDung = function () {
                                             )
                                         )
                                     )
+                                ),
+                                // Cột xác nhận validation
+                                e('td', { className: 'px-3 py-2 text-center' },
+                                    validatedRows[row.stt]
+                                        ? e('div', { className: 'flex items-center justify-center gap-1' },
+                                            e('span', { className: 'inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full' },
+                                                e('i', { className: 'fas fa-check-circle text-[10px]' }),
+                                                'Đã xác nhận'
+                                            ),
+                                            e('button', {
+                                                className: 'ml-1 text-gray-400 hover:text-red-500 text-xs',
+                                                title: 'Hủy xác nhận',
+                                                onClick: function() { handleUnvalidateRow(row.stt); }
+                                            },
+                                                e('i', { className: 'fas fa-times' })
+                                            )
+                                        )
+                                        : e('button', {
+                                            className: 'px-3 py-1 text-xs text-white bg-[#006B68] rounded-lg hover:bg-[#005a57] transition-colors inline-flex items-center gap-1',
+                                            onClick: function() { handleValidateRow(row.stt); }
+                                        },
+                                            e('i', { className: 'fas fa-check text-[10px]' }),
+                                            'Xác nhận'
+                                        )
                                 )
-                            )
-                        )
+                            );
+                        })
                     )
                 )
             )
